@@ -13,7 +13,7 @@ BEGIN
     END IF;
 END $$;
 
--- 2. ADD DRIVER NAME & FULFILLMENT NOTES TO ORDERS TABLE
+-- 2. ADD DRIVER NAME, FULFILLMENT NOTES & COUPON DETAILS TO ORDERS TABLE
 DO $$
 BEGIN
     IF NOT EXISTS (
@@ -28,6 +28,20 @@ BEGIN
         WHERE table_schema = 'public' AND table_name = 'orders' AND column_name = 'delivery_person'
     ) THEN
         ALTER TABLE public.orders ADD COLUMN delivery_person TEXT DEFAULT '';
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' AND table_name = 'orders' AND column_name = 'coupon_code'
+    ) THEN
+        ALTER TABLE public.orders ADD COLUMN coupon_code TEXT DEFAULT '';
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' AND table_name = 'orders' AND column_name = 'discount_amount'
+    ) THEN
+        ALTER TABLE public.orders ADD COLUMN discount_amount NUMERIC(10,2) DEFAULT 0;
     END IF;
 END $$;
 

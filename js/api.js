@@ -400,32 +400,148 @@ export async function validateCartStock(cartItems) {
   return { valid: true };
 }
 
-export async function createOrder(orderPayload) {
-  const client = getSupabase();
-  if (!client) throw new Error('Supabase client uninitialized');
+/* ============================================================================
+   COUPON VALIDATION METHOD
+   ============================================================================ */
 
-  const stockCheck = await validateCartStock(orderPayload.items);
-  if (!stockCheck.valid) {
-    throw new Error(`Stock Error:\n${stockCheck.issues.join('\n')}`);
+export async function validateCoupon(code, subtotal = 0) {
+  if (!code || !code.trim()) {
+    throw new Error('Please enter a valid coupon code.');
   }
 
-  const { data, error } = await client
-    .from('orders')
-    .insert([orderPayload])
-    .select();
+  const cleanCode = code.trim().toUpperCase();
+  const isMock = localStorage.getItem('freshly_use_mock_mode') === 'true' || localStorage.getItem('freshly_use_mock_mode') === null;
 
-  if (error) throw new Error(parseApiError(error));
-  const newOrder = data[0];
+  let coupon = null;
 
-  for (const item of orderPayload.items) {
-    const { data: p } = await client.from('products').select('stock_quantity').eq('id', item.id).single();
-    if (p) {
-      const newStock = Math.max(0, p.stock_quantity - item.quantity);
-      await client.from('products').update({ stock_quantity: newStock }).eq('id', item.id);
+  if (isMock) {
+    const coupons = JSON.parse(localStorage.getItem('freshly_mock_coupons') || '[]');
+    coupon = coupons.find(c => String(c.code).toUpperCase() === cleanCode);
+  } else {
+    const client = getSupabase();
+    if (!client) {
+      const coupons = JSON.parse(localStorage.getItem('freshly_mock_coupons') || '[]');
+      coupon = coupons.find(c => String(c.code).toUpperCase() === cleanCode);
+    } else {
+      const { data, error } = await client
+        .from('coupons')
+        .select('*')
+        .eq('code', cleanCode)
+        .maybeSingle();
+
+      if (error) throw new Error(parseApiError(error));
+      coupon = data;
     }
   }
 
-  return newOrder;
+  if (!coupon) {
+    throw new Error(`Coupon code "${cleanCode}" is invalid.`);
+  }
+
+  if (!coupon.is_active) {
+    throw new Error(`Coupon code "${cleanCode}" is currently inactive.`);
+  }
+
+  if (coupon.expiry_date) {
+    const today = new Date().toISOString().split('T')[0];
+    if (coupon.expiry_date < today) {
+      throw new Error(`Coupon code "${cleanCode}" has expired.`);
+    }
+  }
+
+  const minSpend = parseFloat(coupon.min_spend || 0);
+  if (subtotal < minSpend) {
+    throw new Error(`Minimum spend of ৳${minSpend.toFixed(2)} required for coupon "${cleanCode}".`);
+  }
+
+  let discountAmount = 0;
+  const val = parseFloat(coupon.value);
+  if (coupon.discount_type === 'percentage') {
+    discountAmount = (subtotal * val) / 100;
+  } else {
+    discountAmount = val;
+  }
+
+  discountAmount = Math.min(subtotal, Math.max(0, discountAmount));
+
+  return {
+    valid: true,
+    coupon: {
+      id: coupon.id,
+      code: coupon.code,
+      discount_type: coupon.discount_type,
+      value: val,
+      min_spend: minSpend
+    },
+    discountAmount: parseFloat(discountAmount.toFixed(2))
+  };
+}
+
+export async function createOrder(orderPayload) {
+  const isMock = localStorage.getItem('freshly_use_mock_mode') === 'true' || localStorage.getItem('freshly_use_mock_mode') === null;
+
+  if (isMock) {
+    const orders = JSON.parse(localStorage.getItem('freshly_mock_orders') || '[]');
+    const newOrder = {
+      id: String(Date.now()),
+      created_at: new Date().toISOString(),
+      customer_name: orderPayload.customer_name || 'Customer',
+      customer_email: orderPayload.customer_email || 'customer@example.com',
+      customer_phone: orderPayload.customer_phone || '+1 (555) 000-0000',
+      delivery_address: orderPayload.delivery_address,
+      delivery_slot: orderPayload.delivery_slot,
+      substitution_pref: orderPayload.substitution_pref,
+      status: 'Pending',
+      total_amount: orderPayload.total_amount,
+      coupon_code: orderPayload.coupon_code || '',
+      discount_amount: orderPayload.discount_amount || 0,
+      delivery_person: '',
+      fulfillment_notes: '',
+      user_id: orderPayload.user_id,
+      items: orderPayload.items
+    };
+    orders.unshift(newOrder);
+    localStorage.setItem('freshly_mock_orders', JSON.stringify(orders));
+
+    // Deduct stock in mock inventory
+    const products = JSON.parse(localStorage.getItem('freshly_mock_products') || '[]');
+    for (const item of orderPayload.items) {
+      const p = products.find(prod => String(prod.id) === String(item.id));
+      if (p) {
+        p.stock_quantity = Math.max(0, p.stock_quantity - item.quantity);
+        if (p.stock_quantity === 0) p.is_available = false;
+      }
+    }
+    localStorage.setItem('freshly_mock_products', JSON.stringify(products));
+
+    return newOrder;
+  } else {
+    const client = getSupabase();
+    if (!client) throw new Error('Supabase client uninitialized');
+
+    const stockCheck = await validateCartStock(orderPayload.items);
+    if (!stockCheck.valid) {
+      throw new Error(`Stock Error:\n${stockCheck.issues.join('\n')}`);
+    }
+
+    const { data, error } = await client
+      .from('orders')
+      .insert([orderPayload])
+      .select();
+
+    if (error) throw new Error(parseApiError(error));
+    const newOrder = data[0];
+
+    for (const item of orderPayload.items) {
+      const { data: p } = await client.from('products').select('stock_quantity').eq('id', item.id).single();
+      if (p) {
+        const newStock = Math.max(0, p.stock_quantity - item.quantity);
+        await client.from('products').update({ stock_quantity: newStock }).eq('id', item.id);
+      }
+    }
+
+    return newOrder;
+  }
 }
 
 export async function fetchCustomerOrders(userId) {

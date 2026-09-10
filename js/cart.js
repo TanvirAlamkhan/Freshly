@@ -3,6 +3,7 @@
    ============================================================================ */
 
 const CART_STORAGE_KEY = 'freshly_cart_items_v2';
+const COUPON_STORAGE_KEY = 'freshly_applied_coupon';
 let listeners = [];
 
 export function getCartItems() {
@@ -22,6 +23,28 @@ function saveCartItems(items) {
   } catch (err) {
     console.error('[Cart Save Error]', err);
   }
+}
+
+export function getAppliedCoupon() {
+  try {
+    const raw = localStorage.getItem(COUPON_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (err) {
+    return null;
+  }
+}
+
+export function saveAppliedCoupon(coupon) {
+  if (!coupon) {
+    localStorage.removeItem(COUPON_STORAGE_KEY);
+  } else {
+    localStorage.setItem(COUPON_STORAGE_KEY, JSON.stringify(coupon));
+  }
+  notifyListeners();
+}
+
+export function removeAppliedCoupon() {
+  saveAppliedCoupon(null);
 }
 
 export function subscribeCart(callback) {
@@ -87,6 +110,7 @@ export function removeFromCart(productId) {
 }
 
 export function clearCart() {
+  removeAppliedCoupon();
   saveCartItems([]);
 }
 
@@ -94,13 +118,46 @@ export function getCartSummary() {
   const items = getCartItems();
   const totalItemsCount = items.reduce((sum, item) => sum + item.quantity, 0);
   const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  
+  let discountAmount = 0;
+  const appliedCoupon = getAppliedCoupon();
+  let couponDetails = null;
+
+  if (appliedCoupon && subtotal > 0) {
+    const minSpend = parseFloat(appliedCoupon.min_spend || 0);
+    if (subtotal >= minSpend) {
+      const val = parseFloat(appliedCoupon.value);
+      if (appliedCoupon.discount_type === 'percentage') {
+        discountAmount = (subtotal * val) / 100;
+      } else {
+        discountAmount = val;
+      }
+      discountAmount = Math.min(subtotal, Math.max(0, discountAmount));
+      couponDetails = {
+        ...appliedCoupon,
+        isEligible: true,
+        discountAmount: discountAmount.toFixed(2)
+      };
+    } else {
+      couponDetails = {
+        ...appliedCoupon,
+        isEligible: false,
+        discountAmount: '0.00',
+        ineligibleReason: `Add ৳${(minSpend - subtotal).toFixed(2)} more to use coupon`
+      };
+    }
+  }
+
+  const discountedSubtotal = Math.max(0, subtotal - discountAmount);
   const deliveryFee = subtotal > 0 && subtotal < 50 ? 4.99 : 0.00;
-  const grandTotal = subtotal + deliveryFee;
+  const grandTotal = discountedSubtotal + deliveryFee;
 
   return {
     items,
     totalItemsCount,
     subtotal: subtotal.toFixed(2),
+    discountAmount: discountAmount.toFixed(2),
+    appliedCoupon: couponDetails,
     deliveryFee: deliveryFee.toFixed(2),
     grandTotal: grandTotal.toFixed(2)
   };
@@ -142,7 +199,7 @@ export function renderCartDrawer() {
       <img src="${item.image_url || 'https://via.placeholder.com/64'}" alt="${item.title}" class="cart-item-img" onerror="this.onerror=null;this.src='https://via.placeholder.com/64?text=Freshly'">
       <div class="cart-item-details">
         <div class="cart-item-title">${item.title}</div>
-        <div class="cart-item-price">$${item.price.toFixed(2)} each</div>
+        <div class="cart-item-price">৳${item.price.toFixed(2)} each</div>
       </div>
       <div class="qty-controls">
         <button class="qty-btn btn-minus" data-id="${item.id}">-</button>
@@ -157,15 +214,47 @@ export function renderCartDrawer() {
 
   if (drawerFooter) {
     drawerFooter.innerHTML = `
-      <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.95rem;">
+      <div class="coupon-section" style="margin-bottom: 1rem; padding: 0.75rem; background: #f8fafc; border: 1px solid var(--border); border-radius: var(--radius-md);">
+        ${summary.appliedCoupon ? `
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <span style="font-weight: 700; font-size: 0.85rem; color: #166534; background: #dcfce7; padding: 0.2rem 0.5rem; border-radius: 4px; display: inline-flex; align-items: center; gap: 0.35rem;">
+                <i class="fas fa-tag"></i> ${summary.appliedCoupon.code}
+              </span>
+              <div style="font-size: 0.75rem; color: ${summary.appliedCoupon.isEligible ? '#166534' : '#dc2626'}; margin-top: 0.25rem;">
+                ${summary.appliedCoupon.isEligible ? (summary.appliedCoupon.discount_type === 'percentage' ? `${summary.appliedCoupon.value}% OFF applied` : `৳${summary.appliedCoupon.value} OFF applied`) : summary.appliedCoupon.ineligibleReason}
+              </div>
+            </div>
+            <button id="btn-remove-coupon" class="btn btn-sm" style="background: none; border: none; color: #ef4444; font-size: 0.85rem; cursor: pointer;" title="Remove Coupon">
+              <i class="fas fa-times-circle"></i> Remove
+            </button>
+          </div>
+        ` : `
+          <div style="display: flex; gap: 0.5rem;">
+            <input type="text" id="cart-coupon-input" placeholder="Promo code (e.g. FRESH20)" style="flex-grow: 1; padding: 0.4rem 0.6rem; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.85rem; text-transform: uppercase;">
+            <button id="btn-apply-coupon" class="btn btn-secondary btn-sm" style="white-space: nowrap;">Apply</button>
+          </div>
+          <div id="coupon-message" style="font-size: 0.75rem; margin-top: 0.35rem; display: none;"></div>
+        `}
+      </div>
+
+      <div style="display: flex; justify-content: space-between; margin-bottom: 0.4rem; font-size: 0.95rem;">
         <span>Subtotal:</span>
         <strong>৳${summary.subtotal}</strong>
       </div>
-      <div style="display: flex; justify-content: space-between; margin-bottom: 1rem; font-size: 0.95rem;">
+
+      ${parseFloat(summary.discountAmount) > 0 ? `
+      <div style="display: flex; justify-content: space-between; margin-bottom: 0.4rem; font-size: 0.95rem; color: #16a34a; font-weight: 600;">
+        <span>Discount (${summary.appliedCoupon.code}):</span>
+        <strong>-৳${summary.discountAmount}</strong>
+      </div>
+      ` : ''}
+
+      <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.95rem;">
         <span>Delivery Fee:</span>
         <strong>${parseFloat(summary.deliveryFee) === 0 ? '<span style="color: var(--primary);">FREE</span>' : '৳' + summary.deliveryFee}</strong>
       </div>
-      <div style="display: flex; justify-content: space-between; margin-bottom: 1.5rem; font-size: 1.15rem; font-weight: 700;">
+      <div style="display: flex; justify-content: space-between; margin-bottom: 1.25rem; font-size: 1.15rem; font-weight: 700; border-top: 1px solid var(--border); padding-top: 0.5rem;">
         <span>Total:</span>
         <span style="color: var(--primary-dark);">৳${summary.grandTotal}</span>
       </div>
@@ -173,6 +262,53 @@ export function renderCartDrawer() {
         Proceed to Checkout <i class="fas fa-arrow-right"></i>
       </button>
     `;
+
+    // Bind Coupon Events
+    const applyBtn = drawerFooter.querySelector('#btn-apply-coupon');
+    const couponInput = drawerFooter.querySelector('#cart-coupon-input');
+    const couponMsg = drawerFooter.querySelector('#coupon-message');
+
+    const handleApplyCoupon = async () => {
+      const code = couponInput?.value?.trim();
+      if (!code) {
+        if (couponMsg) {
+          couponMsg.style.display = 'block';
+          couponMsg.style.color = '#dc2626';
+          couponMsg.textContent = 'Please enter a coupon code.';
+        }
+        return;
+      }
+
+      try {
+        if (applyBtn) {
+          applyBtn.disabled = true;
+          applyBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i>`;
+        }
+        const { validateCoupon } = await import('./api.js');
+        const result = await validateCoupon(code, parseFloat(summary.subtotal));
+        saveAppliedCoupon(result.coupon);
+      } catch (err) {
+        if (couponMsg) {
+          couponMsg.style.display = 'block';
+          couponMsg.style.color = '#dc2626';
+          couponMsg.textContent = err.message;
+        }
+      } finally {
+        if (applyBtn) {
+          applyBtn.disabled = false;
+          applyBtn.textContent = 'Apply';
+        }
+      }
+    };
+
+    applyBtn?.addEventListener('click', handleApplyCoupon);
+    couponInput?.addEventListener('keyup', (e) => {
+      if (e.key === 'Enter') handleApplyCoupon();
+    });
+
+    drawerFooter.querySelector('#btn-remove-coupon')?.addEventListener('click', () => {
+      removeAppliedCoupon();
+    });
   }
 
   drawerBody.querySelectorAll('.btn-minus').forEach(btn => {
@@ -206,3 +342,4 @@ export function renderCartDrawer() {
 }
 
 subscribeCart(() => renderCartDrawer());
+

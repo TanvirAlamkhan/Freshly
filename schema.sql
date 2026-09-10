@@ -62,6 +62,8 @@ CREATE TABLE IF NOT EXISTS public.orders (
     substitution_pref TEXT NOT NULL DEFAULT 'Refund item' CHECK (substitution_pref IN ('Refund item', 'Allow similar brand', 'Contact me')),
     delivery_person TEXT DEFAULT '',
     fulfillment_notes TEXT DEFAULT '',
+    coupon_code TEXT DEFAULT '',
+    discount_amount NUMERIC(10,2) DEFAULT 0,
     created_at TIMESTAMPTZ NOT NULL DEFAULT TIMEZONE('utc'::TEXT, NOW())
 );
 

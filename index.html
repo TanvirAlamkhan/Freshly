@@ -189,15 +189,19 @@
         <div style="background: #f8fafc; padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1.5rem; border: 1px solid var(--border);">
           <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 0.35rem;">
             <span>Subtotal:</span>
-            <span id="checkout-summary-subtotal">$0.00</span>
+            <span id="checkout-summary-subtotal">৳0.00</span>
+          </div>
+          <div id="checkout-summary-discount-row" style="display: none; justify-content: space-between; font-size: 0.9rem; margin-bottom: 0.35rem; color: #16a34a; font-weight: 600;">
+            <span id="checkout-summary-discount-label">Discount:</span>
+            <span id="checkout-summary-discount">-৳0.00</span>
           </div>
           <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 0.5rem;">
             <span>Delivery Fee:</span>
-            <span id="checkout-summary-delivery">$0.00</span>
+            <span id="checkout-summary-delivery">৳0.00</span>
           </div>
           <div style="display: flex; justify-content: space-between; font-weight: 700; font-size: 1.1rem; border-top: 1px solid var(--border); padding-top: 0.5rem;">
             <span>Total Payable:</span>
-            <span id="checkout-summary-total" style="color: var(--primary-dark);">$0.00</span>
+            <span id="checkout-summary-total" style="color: var(--primary-dark);">৳0.00</span>
           </div>
         </div>
 
@@ -304,6 +308,16 @@
         if (summary.items.length === 0) return;
 
         document.getElementById('checkout-summary-subtotal').textContent = `৳${summary.subtotal}`;
+
+        const discountRow = document.getElementById('checkout-summary-discount-row');
+        if (parseFloat(summary.discountAmount) > 0 && summary.appliedCoupon) {
+          discountRow.style.display = 'flex';
+          document.getElementById('checkout-summary-discount-label').textContent = `Discount (${summary.appliedCoupon.code}):`;
+          document.getElementById('checkout-summary-discount').textContent = `-৳${summary.discountAmount}`;
+        } else {
+          discountRow.style.display = 'none';
+        }
+
         document.getElementById('checkout-summary-delivery').textContent = parseFloat(summary.deliveryFee) === 0 ? 'FREE' : `৳${summary.deliveryFee}`;
         document.getElementById('checkout-summary-total').textContent = `৳${summary.grandTotal}`;
 
@@ -337,7 +351,9 @@
         status: 'Pending',
         delivery_address: deliveryAddress,
         delivery_slot: slot,
-        substitution_pref: substitution
+        substitution_pref: substitution,
+        coupon_code: (summary.appliedCoupon && summary.appliedCoupon.isEligible) ? summary.appliedCoupon.code : '',
+        discount_amount: parseFloat(summary.discountAmount || 0)
       };
 
       try {
