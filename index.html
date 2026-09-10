@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Freshly — Premium Organic Grocery Store</title>
+  <meta name="description" content="Shop fresh produce, organic dairy, artisanal bakery, and cold beverages delivered to your doorstep.">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- TOAST CONTAINER -->
+  <div id="toast-container"></div>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="nav-brand">
+        <i class="fas fa-leaf"></i> Freshly
+      </a>
+
+      <!-- SEARCH BAR -->
+      <div style="position: relative; width: 100%; max-width: 400px; margin: 0 1.5rem;">
+        <input type="text" id="input-search" class="form-input" placeholder="Search fresh produce, dairy, bakery..." style="padding-left: 2.25rem; border-radius: var(--radius-full);">
+        <i class="fas fa-search" style="position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
+      </div>
+
+      <div class="nav-actions">
+        <!-- USER PROFILE / LOGIN LINK -->
+        <div id="nav-user-actions"></div>
+
+        <!-- CART BUTTON -->
+        <button id="btn-toggle-cart" class="cart-btn" aria-label="Shopping Cart">
+          <i class="fas fa-shopping-basket"></i>
+          <span class="cart-badge" style="display: none;">0</span>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN STORE CONTENT -->
+  <main class="container" style="flex-grow: 1;">
+    
+    <!-- HERO PROMO CAROUSEL -->
+    <section class="hero">
+      <div class="hero-content">
+        <span class="hero-tag"><i class="fas fa-sparkles"></i> 100% Organic Certified</span>
+        <h1>Farm Fresh Produce Delivered Daily</h1>
+        <p>Get fresh fruits, vegetables, dairy, and artisanal bread delivered to your doorstep in as little as 2 hours.</p>
+        <a href="#products-section" class="btn btn-primary" style="background: white; color: var(--primary-dark);">
+          Explore Store Catalog <i class="fas fa-arrow-down"></i>
+        </a>
+      </div>
+    </section>
+
+    <!-- ROUTE BANNER ALERTS -->
+    <div id="index-banner-alert" style="display: none; margin-bottom: 1.5rem;"></div>
+
+    <!-- PRODUCTS CATALOG SECTION -->
+    <section id="products-section">
+      <div class="section-header">
+        <h2>Shop by Category</h2>
+        <div id="categories-pills" class="categories-pills">
+          <button class="pill-btn active" data-category="All">All Items</button>
+        </div>
+      </div>
+
+      <!-- PRODUCTS GRID -->
+      <div id="products-grid" class="products-grid">
+        <div style="grid-column: 1/-1; text-align: center; padding: 4rem 1rem;">
+          <i class="fas fa-circle-notch fa-spin" style="font-size: 2.5rem; color: var(--primary);"></i>
+          <p style="margin-top: 1rem; color: var(--text-muted);">Loading fresh catalog...</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- CART SLIDE-OUT DRAWER -->
+  <div id="cart-drawer-overlay" class="modal-overlay">
+    <aside id="cart-drawer" class="cart-drawer">
+      <div class="cart-drawer-header">
+        <h3>Your Shopping Basket</h3>
+        <button id="btn-close-cart" class="modal-close">&times;</button>
+      </div>
+      <div id="cart-drawer-body" class="cart-drawer-body"></div>
+      <div id="cart-drawer-footer" class="cart-drawer-footer"></div>
+    </aside>
+  </div>
+
+  <!-- CHECKOUT MODAL -->
+  <div id="modal-checkout" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Complete Your Order</h3>
+        <button id="btn-close-checkout" class="modal-close">&times;</button>
+      </div>
+
+      <form id="form-checkout">
+        <!-- DELIVERY ADDRESS SELECTOR -->
+        <div class="form-group">
+          <label class="form-label"><i class="fas fa-map-marker-alt"></i> Delivery Address</label>
+          <input type="text" id="checkout-address-input" class="form-input" placeholder="123 Organic Way, Apt 4B" required>
+          <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">
+            Auto-filled from your profile default address. You may override it for this order.
+          </div>
+        </div>
+
+        <!-- TIME SLOT SELECTOR -->
+        <div class="form-group">
+          <label class="form-label"><i class="fas fa-clock"></i> Delivery Time Slot</label>
+          <select id="checkout-slot-select" class="form-select" required>
+            <option value="Morning (8:00 AM - 11:00 AM)">Morning (8:00 AM - 11:00 AM)</option>
+            <option value="Afternoon (1:00 PM - 4:00 PM)">Afternoon (1:00 PM - 4:00 PM)</option>
+            <option value="Evening (6:00 PM - 9:00 PM)">Evening (6:00 PM - 9:00 PM)</option>
+          </select>
+        </div>
+
+        <!-- SUBSTITUTION PREFERENCE -->
+        <div class="form-group">
+          <label class="form-label"><i class="fas fa-exchange-alt"></i> Out of Stock Preference</label>
+          <select id="checkout-substitution-select" class="form-select">
+            <option value="Refund item">Refund item if unavailable</option>
+            <option value="Allow similar brand">Allow similar organic brand</option>
+            <option value="Contact me">Contact me before replacing</option>
+          </select>
+        </div>
+
+        <!-- ORDER SUMMARY BREAKDOWN -->
+        <div style="background: #f8fafc; padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1.5rem; border: 1px solid var(--border);">
+          <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 0.35rem;">
+            <span>Subtotal:</span>
+            <span id="checkout-summary-subtotal">$0.00</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 0.5rem;">
+            <span>Delivery Fee:</span>
+            <span id="checkout-summary-delivery">$0.00</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-weight: 700; font-size: 1.1rem; border-top: 1px solid var(--border); padding-top: 0.5rem;">
+            <span>Total Payable:</span>
+            <span id="checkout-summary-total" style="color: var(--primary-dark);">$0.00</span>
+          </div>
+        </div>
+
+        <button type="submit" id="btn-submit-order" class="btn btn-primary" style="width: 100%;">
+          Place Order & Track Live <i class="fas fa-check-circle"></i>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="container" style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 2rem;">
+      <div>
+        <div class="nav-brand" style="color: white; margin-bottom: 0.5rem;">
+          <i class="fas fa-leaf"></i> Freshly
+        </div>
+        <p style="max-width: 320px;">Premium organic grocery delivery service. Farm fresh products, delivered fast.</p>
+      </div>
+      <div>
+        <h4>Quick Navigation</h4>
+        <ul style="list-style: none; margin-top: 0.5rem; line-height: 2;">
+          <li><a href="index.html">Store Front</a></li>
+          <li><a href="customer.html">Customer Dashboard</a></li>
+          <li><a href="admin.html">Admin Fulfillment Portal</a></li>
+          <li><a href="login.html">Sign In / Register</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Tech Stack</h4>
+        <p style="font-size: 0.85rem; margin-top: 0.5rem;">Vanilla HTML/CSS/JS · Supabase PostgreSQL, Auth & Storage · Vercel Deployment</p>
+      </div>
+    </div>
+    <div class="container" style="margin-top: 2rem; border-top: 1px solid #334155; padding-top: 1rem; text-align: center; font-size: 0.8rem;">
+      &copy; 2026 Freshly Grocery E-Commerce. All rights reserved.
+    </div>
+  </footer>
+
+  <script type="module">
+    import { createOrder, parseApiError } from './js/api.js';
+    import { initAuth, getCurrentUserProfile } from './js/auth.js';
+    import { getCartSummary, clearCart } from './js/cart.js';
+    import { initCatalog } from './js/catalog.js';
+    import { showToast } from './js/customer.js';
+
+    // 1. Init Auth Nav
+    await initAuth();
+
+    // 2. Check URL Banner alerts
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('banner') === 'unauthorized_admin') {
+      const alertEl = document.getElementById('index-banner-alert');
+      alertEl.innerHTML = `<div class="toast toast-error" style="pointer-events: auto;"><i class="fas fa-lock"></i> Access Denied: Admin role required for the Admin Dashboard.</div>`;
+      alertEl.style.display = 'block';
+    }
+
+    if (urlParams.get('drawer') === 'open') {
+      openCartDrawer();
+    }
+
+    // 3. Init Storefront Catalog Engine
+    await initCatalog({
+      pillsContainerId: 'categories-pills',
+      gridContainerId: 'products-grid',
+      searchInputId: 'input-search'
+    });
+
+    // Cart Drawer Toggle Handlers
+    const cartOverlay = document.getElementById('cart-drawer-overlay');
+    const cartDrawer = document.getElementById('cart-drawer');
+    const btnToggleCart = document.getElementById('btn-toggle-cart');
+    const btnCloseCart = document.getElementById('btn-close-cart');
+
+    function openCartDrawer() {
+      cartOverlay.classList.add('open');
+      cartDrawer.classList.add('open');
+    }
+
+    function closeCartDrawer() {
+      cartOverlay.classList.remove('open');
+      cartDrawer.classList.remove('open');
+    }
+
+    btnToggleCart.addEventListener('click', openCartDrawer);
+    btnCloseCart.addEventListener('click', closeCartDrawer);
+    cartOverlay.addEventListener('click', (e) => {
+      if (e.target === cartOverlay) closeCartDrawer();
+    });
+
+    // Checkout Modal Handlers
+    const modalCheckout = document.getElementById('modal-checkout');
+    const btnCloseCheckout = document.getElementById('btn-close-checkout');
+
+    document.addEventListener('click', async (e) => {
+      if (e.target && e.target.id === 'btn-proceed-checkout') {
+        const userProfile = getCurrentUserProfile();
+        if (!userProfile) {
+          showToast('Please sign in to complete checkout.', 'warning');
+          setTimeout(() => { window.location.href = 'login.html?banner=auth_required'; }, 1000);
+          return;
+        }
+
+        const summary = getCartSummary();
+        if (summary.items.length === 0) return;
+
+        document.getElementById('checkout-summary-subtotal').textContent = `$${summary.subtotal}`;
+        document.getElementById('checkout-summary-delivery').textContent = parseFloat(summary.deliveryFee) === 0 ? 'FREE' : `$${summary.deliveryFee}`;
+        document.getElementById('checkout-summary-total').textContent = `$${summary.grandTotal}`;
+
+        // Auto-fill delivery address from profile
+        const addrInput = document.getElementById('checkout-address-input');
+        addrInput.value = userProfile.default_address || '123 Organic Way, Apt 4B';
+
+        closeCartDrawer();
+        modalCheckout.classList.add('open');
+      }
+    });
+
+    btnCloseCheckout.addEventListener('click', () => modalCheckout.classList.remove('open'));
+
+    // Checkout Form Submission
+    document.getElementById('form-checkout').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const userProfile = getCurrentUserProfile();
+      if (!userProfile) return;
+
+      const summary = getCartSummary();
+      const deliveryAddress = document.getElementById('checkout-address-input').value.trim();
+      const slot = document.getElementById('checkout-slot-select').value;
+      const substitution = document.getElementById('checkout-substitution-select').value;
+      const btnSubmit = document.getElementById('btn-submit-order');
+
+      const payload = {
+        user_id: userProfile.id,
+        items: summary.items,
+        total_amount: parseFloat(summary.grandTotal),
+        status: 'Pending',
+        delivery_address: deliveryAddress,
+        delivery_slot: slot,
+        substitution_pref: substitution
+      };
+
+      try {
+        btnSubmit.disabled = true;
+        btnSubmit.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Placing Order...`;
+
+        await createOrder(payload);
+        clearCart();
+        modalCheckout.classList.remove('open');
+        showToast('Order placed successfully! Redirecting to Live Order Tracker...', 'success');
+        setTimeout(() => { window.location.href = 'customer.html'; }, 1200);
+
+      } catch (err) {
+        showToast(err.message, 'error');
+      } finally {
+        btnSubmit.disabled = false;
+        btnSubmit.innerHTML = `Place Order & Track Live <i class="fas fa-check-circle"></i>`;
+      }
+    });
+  </script>
+</body>
+</html>

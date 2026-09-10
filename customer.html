@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Customer Dashboard — Freshly Grocery</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- TOAST CONTAINER -->
+  <div id="toast-container"></div>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="nav-brand">
+        <i class="fas fa-leaf"></i> Freshly
+      </a>
+      <ul class="nav-links">
+        <li><a href="index.html"><i class="fas fa-store"></i> Storefront</a></li>
+        <li><a href="customer.html" class="active"><i class="fas fa-user-circle"></i> Customer Portal</a></li>
+      </ul>
+      <div class="nav-actions">
+        <div id="nav-user-actions"></div>
+        <button id="btn-toggle-cart" class="cart-btn" aria-label="Shopping Cart">
+          <i class="fas fa-shopping-basket"></i>
+          <span class="cart-badge" style="display: none;">0</span>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- DASHBOARD CONTAINER -->
+  <main class="container" style="flex-grow: 1; padding-top: 2rem; padding-bottom: 3rem;">
+    <div style="margin-bottom: 2rem;">
+      <h1>Customer Account & Deliveries</h1>
+      <p style="color: var(--text-muted); font-size: 0.95rem;">Track live deliveries in real-time, view order history, and update profile delivery preferences.</p>
+    </div>
+
+    <!-- ACCOUNT PROFILE & TABS LAYOUT -->
+    <div style="display: grid; grid-template-columns: 280px 1fr; gap: 1.5rem; align-items: start;">
+      
+      <!-- PROFILE CARD -->
+      <aside>
+        <div id="customer-profile-details" style="margin-bottom: 1.5rem;">
+          <div style="text-align: center; padding: 2rem; background: white; border-radius: var(--radius-md); border: 1px solid var(--border);">
+            <i class="fas fa-circle-notch fa-spin" style="font-size: 1.5rem; color: var(--primary);"></i>
+            <p style="margin-top: 0.5rem; color: var(--text-muted); font-size: 0.85rem;">Loading profile...</p>
+          </div>
+        </div>
+
+        <!-- UPDATE PROFILE FORM CARD -->
+        <div style="background: white; border-radius: var(--radius-md); border: 1px solid var(--border); padding: 1.25rem;">
+          <h4 style="margin-bottom: 0.75rem;"><i class="fas fa-edit"></i> Update Preferences</h4>
+          <form id="form-update-profile">
+            <div class="form-group">
+              <label class="form-label" for="profile-phone">Phone Number</label>
+              <input type="tel" id="profile-phone" class="form-input" placeholder="+1 (555) 000-0000" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="profile-address">Default Delivery Address</label>
+              <textarea id="profile-address" class="form-textarea" rows="2" placeholder="123 Organic Way, Apt 4B" required></textarea>
+            </div>
+            <button type="submit" class="btn btn-secondary btn-sm" style="width: 100%;">
+              <i class="fas fa-save"></i> Save Profile
+            </button>
+          </form>
+        </div>
+      </aside>
+
+      <!-- MAIN TABS CONTENT AREA -->
+      <div>
+        <!-- TABS BUTTONS -->
+        <div style="display: flex; gap: 1rem; border-bottom: 2px solid var(--border); margin-bottom: 1.5rem;">
+          <button id="tab-btn-tracker" class="btn btn-secondary active" style="border-radius: var(--radius-md) var(--radius-md) 0 0; border-bottom: none;">
+            <i class="fas fa-truck-fast"></i> Live Delivery Tracker
+          </button>
+          <button id="tab-btn-history" class="btn btn-secondary" style="border-radius: var(--radius-md) var(--radius-md) 0 0; border-bottom: none;">
+            <i class="fas fa-history"></i> Order History & Reorder
+          </button>
+        </div>
+
+        <!-- TAB 1: LIVE TRACKER -->
+        <section id="tab-content-tracker">
+          <div id="active-order-tracker-container">
+            <div style="text-align: center; padding: 3rem;">
+              <i class="fas fa-circle-notch fa-spin" style="font-size: 2rem; color: var(--primary);"></i>
+              <p style="margin-top: 0.5rem; color: var(--text-muted);">Fetching active delivery status...</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 2: ORDER HISTORY -->
+        <section id="tab-content-history" style="display: none;">
+          <h3 style="margin-bottom: 1.25rem;">Past Orders & Receipts</h3>
+          <div id="order-history-container"></div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <!-- CART DRAWER -->
+  <div id="cart-drawer-overlay" class="modal-overlay">
+    <aside id="cart-drawer" class="cart-drawer">
+      <div class="cart-drawer-header">
+        <h3>Your Shopping Basket</h3>
+        <button id="btn-close-cart" class="modal-close">&times;</button>
+      </div>
+      <div id="cart-drawer-body" class="cart-drawer-body"></div>
+      <div id="cart-drawer-footer" class="cart-drawer-footer"></div>
+    </aside>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="container" style="text-align: center; font-size: 0.85rem; color: #94a3b8;">
+      Freshly Grocery Customer Portal · Powered by Supabase & Vercel
+    </div>
+  </footer>
+
+  <script type="module">
+    import { initCustomerDashboard } from './js/customer.js';
+    import { initAuth } from './js/auth.js';
+
+    // 1. Init Auth & Nav
+    await initAuth();
+
+    // 2. Init Dashboard Controller
+    await initCustomerDashboard();
+
+    // 3. Tab Switching Logic
+    const tabBtnTracker = document.getElementById('tab-btn-tracker');
+    const tabBtnHistory = document.getElementById('tab-btn-history');
+
+    const contentTracker = document.getElementById('tab-content-tracker');
+    const contentHistory = document.getElementById('tab-content-history');
+
+    tabBtnTracker.addEventListener('click', () => {
+      tabBtnTracker.classList.add('active');
+      tabBtnHistory.classList.remove('active');
+      contentTracker.style.display = 'block';
+      contentHistory.style.display = 'none';
+    });
+
+    tabBtnHistory.addEventListener('click', () => {
+      tabBtnHistory.classList.add('active');
+      tabBtnTracker.classList.remove('active');
+      contentHistory.style.display = 'block';
+      contentTracker.style.display = 'none';
+    });
+
+    // Cart Drawer Toggle
+    const cartOverlay = document.getElementById('cart-drawer-overlay');
+    const cartDrawer = document.getElementById('cart-drawer');
+    document.getElementById('btn-toggle-cart').addEventListener('click', () => {
+      cartOverlay.classList.add('open');
+      cartDrawer.classList.add('open');
+    });
+    document.getElementById('btn-close-cart').addEventListener('click', () => {
+      cartOverlay.classList.remove('open');
+      cartDrawer.classList.remove('open');
+    });
+  </script>
+</body>
+</html>

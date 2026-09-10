@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In & Registration — Freshly Grocery</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    body {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 1.5rem;
+    }
+    .auth-card {
+      background: white;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-xl);
+      width: 100%;
+      max-width: 480px;
+      padding: 2.25rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .auth-tabs {
+      display: flex;
+      border-bottom: 2px solid var(--border);
+      margin-bottom: 1.75rem;
+    }
+    .auth-tab {
+      flex: 1;
+      text-align: center;
+      padding: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      transition: all var(--transition-fast);
+    }
+    .auth-tab.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+    .alert-banner {
+      padding: 0.85rem 1rem;
+      border-radius: var(--radius-md);
+      font-size: 0.875rem;
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+    }
+    .alert-danger { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+    .alert-warning { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+  </style>
+</head>
+<body>
+
+  <!-- TOAST CONTAINER -->
+  <div id="toast-container"></div>
+
+  <div class="auth-card">
+    <div style="text-align: center; margin-bottom: 1.5rem;">
+      <a href="index.html" class="nav-brand" style="justify-content: center; margin-bottom: 0.5rem;">
+        <i class="fas fa-leaf"></i> Freshly
+      </a>
+      <p style="font-size: 0.9rem; color: var(--text-muted);">Access your Grocery Portal</p>
+    </div>
+
+    <!-- ROUTE GUARD BANNER CONTAINER -->
+    <div id="route-guard-banner" style="display: none;"></div>
+
+    <div class="auth-tabs">
+      <div id="tab-login" class="auth-tab active">Sign In</div>
+      <div id="tab-register" class="auth-tab">Create Account</div>
+    </div>
+
+    <!-- SIGN IN FORM -->
+    <form id="form-login">
+      <div class="form-group">
+        <label class="form-label" for="login-email">Email Address</label>
+        <input type="email" id="login-email" class="form-input" placeholder="user@example.com" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="login-password">Password</label>
+        <input type="password" id="login-password" class="form-input" placeholder="••••••••" required>
+      </div>
+
+      <button type="submit" id="btn-submit-login" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">
+        Sign In <i class="fas fa-sign-in-alt"></i>
+      </button>
+    </form>
+
+    <!-- STRICT REGISTRATION FORM -->
+    <form id="form-register" style="display: none;">
+      <div class="form-group">
+        <label class="form-label" for="reg-fullname">Full Name</label>
+        <input type="text" id="reg-fullname" class="form-input" placeholder="Jane Doe" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="reg-email">Email Address</label>
+        <input type="email" id="reg-email" class="form-input" placeholder="jane@example.com" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="reg-phone">Phone Number (10+ digits)</label>
+        <input type="tel" id="reg-phone" class="form-input" placeholder="+1 (555) 000-0000" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="reg-address">Default Delivery Address</label>
+        <input type="text" id="reg-address" class="form-input" placeholder="123 Organic Way, Apt 4B" required>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+        <div class="form-group">
+          <label class="form-label" for="reg-password">Password</label>
+          <input type="password" id="reg-password" class="form-input" placeholder="Min. 6 chars" minlength="6" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="reg-confirm-password">Confirm Password</label>
+          <input type="password" id="reg-confirm-password" class="form-input" placeholder="Confirm" minlength="6" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="reg-role">Account Type</label>
+        <select id="reg-role" class="form-select">
+          <option value="customer" selected>Customer</option>
+          <option value="admin">Store Admin (Demo Purpose)</option>
+        </select>
+      </div>
+
+      <button type="submit" id="btn-submit-register" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">
+        Create Account <i class="fas fa-user-plus"></i>
+      </button>
+    </form>
+
+    <!-- CREDENTIALS SETUP TRIGGER -->
+    <div style="margin-top: 1.75rem; text-align: center; border-top: 1px solid var(--border); padding-top: 1rem;">
+      <button id="btn-open-config" style="font-size: 0.8rem; color: var(--text-muted); text-decoration: underline;">
+        <i class="fas fa-cog"></i> Configure Supabase Credentials
+      </button>
+    </div>
+  </div>
+
+  <!-- CONFIGURATION MODAL -->
+  <div id="modal-config" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Supabase Credentials</h3>
+        <button class="modal-close" id="btn-close-config">&times;</button>
+      </div>
+      <form id="form-config">
+        <div class="form-group">
+          <label class="form-label">Supabase URL</label>
+          <input type="url" id="config-url" class="form-input" placeholder="https://your-project.supabase.co" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Supabase Anon Key</label>
+          <textarea id="config-anon" class="form-textarea" rows="3" placeholder="eyJhbGciOi..." required></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Save & Connect</button>
+      </form>
+    </div>
+  </div>
+
+  <script type="module">
+    import { loginUser, registerUser, getSupabaseConfig, setSupabaseConfig, parseApiError } from './js/api.js';
+    import { redirectIfLoggedIn } from './js/auth.js';
+    import { showToast } from './js/customer.js';
+
+    // 1. Check if already logged in
+    await redirectIfLoggedIn();
+
+    // 2. Parse URL parameters for route guard banners
+    const urlParams = new URLSearchParams(window.location.search);
+    const banner = urlParams.get('banner');
+    const bannerEl = document.getElementById('route-guard-banner');
+
+    if (banner === 'unauthorized_admin') {
+      bannerEl.innerHTML = `<div class="alert-banner alert-danger"><i class="fas fa-lock"></i> <strong>Access Denied:</strong> Admin privileges required to view the Admin Portal.</div>`;
+      bannerEl.style.display = 'block';
+    } else if (banner === 'auth_required') {
+      bannerEl.innerHTML = `<div class="alert-banner alert-warning"><i class="fas fa-exclamation-triangle"></i> Please sign in to access your account dashboard.</div>`;
+      bannerEl.style.display = 'block';
+    }
+
+    // 3. Tab Switcher
+    const tabLogin = document.getElementById('tab-login');
+    const tabRegister = document.getElementById('tab-register');
+    const formLogin = document.getElementById('form-login');
+    const formRegister = document.getElementById('form-register');
+
+    tabLogin.addEventListener('click', () => {
+      tabLogin.classList.add('active');
+      tabRegister.classList.remove('active');
+      formLogin.style.display = 'block';
+      formRegister.style.display = 'none';
+    });
+
+    tabRegister.addEventListener('click', () => {
+      tabRegister.classList.add('active');
+      tabLogin.classList.remove('active');
+      formRegister.style.display = 'block';
+      formLogin.style.display = 'none';
+    });
+
+    // 4. Submit Handlers
+    formLogin.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value;
+      const btn = document.getElementById('btn-submit-login');
+
+      try {
+        btn.disabled = true;
+        btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Authenticating...`;
+        await loginUser(email, password);
+        showToast('Login successful! Redirecting...', 'success');
+        setTimeout(() => redirectIfLoggedIn(), 600);
+      } catch (err) {
+        showToast(err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `Sign In <i class="fas fa-sign-in-alt"></i>`;
+      }
+    });
+
+    formRegister.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fullName = document.getElementById('reg-fullname').value.trim();
+      const email = document.getElementById('reg-email').value.trim();
+      const phone = document.getElementById('reg-phone').value.trim();
+      const defaultAddress = document.getElementById('reg-address').value.trim();
+      const password = document.getElementById('reg-password').value;
+      const confirmPassword = document.getElementById('reg-confirm-password').value;
+      const role = document.getElementById('reg-role').value;
+      const btn = document.getElementById('btn-submit-register');
+
+      // STRICT CLIENT-SIDE SANITIZATION & VALIDATION
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        showToast('Please enter a valid email address.', 'warning');
+        return;
+      }
+
+      const digitsOnly = phone.replace(/\D/g, '');
+      if (digitsOnly.length < 10) {
+        showToast('Phone number must contain at least 10 digits.', 'warning');
+        return;
+      }
+
+      if (password.length < 6) {
+        showToast('Password must be at least 6 characters long.', 'warning');
+        return;
+      }
+
+      if (password !== confirmPassword) {
+        showToast('Passwords do not match. Please verify.', 'error');
+        return;
+      }
+
+      try {
+        btn.disabled = true;
+        btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Creating Account...`;
+
+        await registerUser({ email, password, fullName, phone, defaultAddress, role });
+        showToast('Account registered successfully! Signing in...', 'success');
+        
+        await loginUser(email, password);
+        setTimeout(() => redirectIfLoggedIn(), 600);
+      } catch (err) {
+        showToast(err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `Create Account <i class="fas fa-user-plus"></i>`;
+      }
+    });
+
+    // 5. Config Modal
+    const modalConfig = document.getElementById('modal-config');
+    const btnOpenConfig = document.getElementById('btn-open-config');
+    const btnCloseConfig = document.getElementById('btn-close-config');
+    const formConfig = document.getElementById('form-config');
+
+    btnOpenConfig.addEventListener('click', () => {
+      const cfg = getSupabaseConfig();
+      document.getElementById('config-url').value = cfg.url;
+      document.getElementById('config-anon').value = cfg.anonKey;
+      modalConfig.classList.add('open');
+    });
+
+    btnCloseConfig.addEventListener('click', () => modalConfig.classList.remove('open'));
+
+    formConfig.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const url = document.getElementById('config-url').value;
+      const anon = document.getElementById('config-anon').value;
+      setSupabaseConfig(url, anon);
+      showToast('Supabase credentials saved.', 'success');
+      modalConfig.classList.remove('open');
+    });
+  </script>
+</body>
+</html>

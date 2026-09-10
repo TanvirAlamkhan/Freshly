@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Operations Portal — Freshly Grocery</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body style="background-color: #f1f5f9;">
+
+  <!-- TOAST CONTAINER -->
+  <div id="toast-container"></div>
+
+  <!-- NAVBAR -->
+  <nav class="navbar" style="background: #0f172a; color: white;">
+    <div class="container">
+      <a href="index.html" class="nav-brand" style="color: white;">
+        <i class="fas fa-leaf" style="color: var(--primary);"></i> Freshly Admin Operations
+      </a>
+
+      <!-- DUAL MODE BADGE TOGGLE -->
+      <div style="display: flex; align-items: center; gap: 1rem;">
+        <button id="btn-toggle-mode" class="badge" style="background: #334155; color: #38bdf8; font-size: 0.85rem; cursor: pointer; border: 1px solid #475569;">
+          <i class="fas fa-toggle-on"></i> <span id="mode-badge-label">MOCK MODE (OFFLINE)</span>
+        </button>
+
+        <div id="nav-user-actions"></div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ADMIN MAIN CONTAINER -->
+  <main class="container" style="flex-grow: 1; padding-top: 1.5rem; padding-bottom: 3rem;">
+    
+    <!-- TOP CONTROL BAR -->
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+      <div>
+        <h1>Grocery Operations Control Center</h1>
+        <p style="color: var(--text-muted); font-size: 0.9rem;">Kanban pipeline, stock threshold alerts, printable thermal packing slips, and analytics.</p>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <label style="display: flex; align-items: center; gap: 0.5rem; background: white; padding: 0.45rem 0.85rem; border-radius: var(--radius-md); border: 1px solid var(--border); cursor: pointer; font-size: 0.85rem; font-weight: 600;">
+          <i class="fas fa-bell" style="color: var(--primary);"></i> Chime Sound
+          <input type="checkbox" id="toggle-audio-chime" checked style="width: 18px; height: 18px;">
+        </label>
+
+        <button id="btn-export-csv" class="btn btn-secondary btn-sm">
+          <i class="fas fa-file-csv"></i> CSV Export
+        </button>
+      </div>
+    </div>
+
+    <!-- MAIN OPERATIONS MODULE TABS -->
+    <div style="display: flex; gap: 0.5rem; overflow-x: auto; border-bottom: 2px solid var(--border); margin-bottom: 1.5rem; padding-bottom: 0.25rem;">
+      <button id="tab-admin-pipeline" class="btn btn-secondary active" style="border-radius: var(--radius-md) var(--radius-md) 0 0; border-bottom: none;">
+        <i class="fas fa-table-columns"></i> Order Pipeline & Kanban
+      </button>
+      <button id="tab-admin-inventory" class="btn btn-secondary" style="border-radius: var(--radius-md) var(--radius-md) 0 0; border-bottom: none;">
+        <i class="fas fa-boxes-stacked"></i> Inventory & Stock Alerts
+      </button>
+      <button id="tab-admin-analytics" class="btn btn-secondary" style="border-radius: var(--radius-md) var(--radius-md) 0 0; border-bottom: none;">
+        <i class="fas fa-chart-pie"></i> Sales Analytics
+      </button>
+      <button id="tab-admin-customers" class="btn btn-secondary" style="border-radius: var(--radius-md) var(--radius-md) 0 0; border-bottom: none;">
+        <i class="fas fa-users"></i> Customer Roster
+      </button>
+      <button id="tab-admin-coupons" class="btn btn-secondary" style="border-radius: var(--radius-md) var(--radius-md) 0 0; border-bottom: none;">
+        <i class="fas fa-ticket"></i> Coupons & Discounts
+      </button>
+    </div>
+
+    <!-- ====================================================================
+         MODULE 1: ORDER PIPELINE & KANBAN
+         ==================================================================== -->
+    <section id="module-admin-pipeline">
+      <!-- VIEW TOGGLE -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
+        <div style="display: flex; gap: 0.5rem;">
+          <button id="btn-view-kanban" class="pill-btn active">Kanban Board</button>
+          <button id="btn-view-table" class="pill-btn">Data Table View</button>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Status Filter:</label>
+          <select id="admin-status-filter" class="form-select form-select-sm" style="width: auto;">
+            <option value="All" selected>All Orders</option>
+            <option value="Pending">Pending</option>
+            <option value="Processing">Processing</option>
+            <option value="Out for Delivery">Out for Delivery</option>
+            <option value="Delivered">Delivered</option>
+            <option value="Cancelled">Cancelled</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- KANBAN BOARD VIEW -->
+      <div id="view-kanban-board" class="kanban-board">
+        <!-- Columns generated dynamically in admin.js -->
+      </div>
+
+      <!-- DATA TABLE VIEW -->
+      <div id="view-orders-table" class="table-responsive" style="display: none;">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Order ID</th>
+              <th>Customer & Address</th>
+              <th>Items Breakdown</th>
+              <th>Total</th>
+              <th>Status</th>
+              <th>Driver / Notes</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="admin-orders-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         MODULE 2: INVENTORY & STOCK CONTROL
+         ==================================================================== -->
+    <section id="module-admin-inventory" style="display: none;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <h3>Product Catalog & Stock Alert Thresholds</h3>
+          <p style="font-size: 0.85rem; color: var(--text-muted);">Rows highlighted in red indicate stock count at or below low-stock threshold.</p>
+        </div>
+        <div style="display: flex; gap: 0.75rem;">
+          <button id="btn-open-add-category" class="btn btn-secondary btn-sm">
+            <i class="fas fa-folder-plus"></i> Add Category
+          </button>
+          <button id="btn-open-add-product" class="btn btn-primary btn-sm">
+            <i class="fas fa-plus"></i> Add New Product
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Category Creator Card -->
+      <div id="card-add-category" class="metric-card" style="display: none; margin-bottom: 1.5rem; background: #f8fafc; border: 1px solid #e2e8f0;">
+        <form id="form-create-category" style="display: flex; gap: 1rem; align-items: flex-end; width: 100%;">
+          <div class="form-group" style="flex: 1; margin-bottom: 0;">
+            <label class="form-label" for="category-name-input">New Category Name</label>
+            <input type="text" id="category-name-input" class="form-input" placeholder="e.g. Organic Snacks" required>
+          </div>
+          <button type="submit" id="btn-submit-category" class="btn btn-primary">Create Category</button>
+          <button type="button" id="btn-cancel-category" class="btn btn-secondary">Cancel</button>
+        </form>
+      </div>
+
+      <div class="table-responsive">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Category</th>
+              <th>Price</th>
+              <th>Current Stock</th>
+              <th>Low Threshold</th>
+              <th>Availability</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="admin-inventory-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         MODULE 3: SALES & REVENUE ANALYTICS DASHBOARD
+         ==================================================================== -->
+    <section id="module-admin-analytics" style="display: none;">
+      <!-- TIMEFRAME SELECTOR -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h3>Store Performance & Revenue Metrics</h3>
+        <div class="categories-pills" id="analytics-timeframe-pills">
+          <button class="pill-btn active" data-timeframe="All Time">All Time</button>
+          <button class="pill-btn" data-timeframe="Today">Today</button>
+          <button class="pill-btn" data-timeframe="Last 7 Days">Last 7 Days</button>
+        </div>
+      </div>
+
+      <!-- KPI METRIC CARDS -->
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div>
+            <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Gross Revenue</div>
+            <div id="analytics-revenue" class="metric-number">$0.00</div>
+          </div>
+          <div class="metric-icon" style="background: #dcfce7; color: #15803d;"><i class="fas fa-dollar-sign"></i></div>
+        </div>
+
+        <div class="metric-card">
+          <div>
+            <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Total Orders</div>
+            <div id="analytics-orders-count" class="metric-number">0</div>
+          </div>
+          <div class="metric-icon"><i class="fas fa-shopping-bag"></i></div>
+        </div>
+
+        <div class="metric-card">
+          <div>
+            <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Average Order Value</div>
+            <div id="analytics-aov" class="metric-number">$0.00</div>
+          </div>
+          <div class="metric-icon" style="background: #e0f2fe; color: #0369a1;"><i class="fas fa-calculator"></i></div>
+        </div>
+
+        <div class="metric-card">
+          <div>
+            <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Pending Queue</div>
+            <div id="analytics-pending" class="metric-number">0</div>
+          </div>
+          <div class="metric-icon" style="background: #fef3c7; color: #d97706;"><i class="fas fa-clock"></i></div>
+        </div>
+      </div>
+
+      <!-- CHARTS & LEADERBOARD GRID -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 1.5rem;">
+        
+        <!-- PEAK SHOPPING HOURS CSS BAR CHART -->
+        <div style="background: white; border-radius: var(--radius-lg); border: 1px solid var(--border); padding: 1.5rem;">
+          <h4><i class="fas fa-chart-bar" style="color: var(--primary);"></i> Peak Shopping Hours Distribution</h4>
+          <p style="font-size: 0.8rem; color: var(--text-muted);">Order volume frequency by hour of day (2-hour buckets)</p>
+          <div id="analytics-hourly-chart" class="chart-container"></div>
+        </div>
+
+        <!-- TOP SELLERS LEADERBOARD -->
+        <div style="background: white; border-radius: var(--radius-lg); border: 1px solid var(--border); padding: 1.5rem;">
+          <h4><i class="fas fa-trophy" style="color: #f59e0b;"></i> Top-Selling Products Leaderboard</h4>
+          <p style="font-size: 0.8rem; color: var(--text-muted);">Sorted by total units sold and revenue generated</p>
+          <div id="analytics-top-sellers" style="margin-top: 1rem;"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         MODULE 4: CUSTOMER MANAGEMENT ROSTER
+         ==================================================================== -->
+    <section id="module-admin-customers" style="display: none;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
+        <h3>Registered Customer Directory</h3>
+        <input type="text" id="input-search-customers" class="form-input" placeholder="Search by name, email, or phone..." style="max-width: 320px;">
+      </div>
+
+      <div class="table-responsive">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Customer Name</th>
+              <th>Contact Email</th>
+              <th>Phone</th>
+              <th>Total Orders</th>
+              <th>Lifetime Spend ($)</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="admin-customers-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         MODULE 5: DISCOUNT & COUPON ENGINE
+         ==================================================================== -->
+    <section id="module-admin-coupons" style="display: none;">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+        
+        <!-- CREATE COUPON FORM -->
+        <div style="background: white; border-radius: var(--radius-lg); border: 1px solid var(--border); padding: 1.5rem;">
+          <h3><i class="fas fa-ticket" style="color: var(--primary);"></i> Create Discount Coupon</h3>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">Generate promotional code for checkout discount.</p>
+
+          <form id="form-create-coupon">
+            <div class="form-group">
+              <label class="form-label" for="coupon-code">Coupon Code</label>
+              <input type="text" id="coupon-code" class="form-input" placeholder="e.g. FRESH20" style="text-transform: uppercase;" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="coupon-type">Discount Type</label>
+              <select id="coupon-type" class="form-select">
+                <option value="percentage">Percentage Off (%)</option>
+                <option value="flat">Flat Dollar Amount ($)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="coupon-value">Discount Value</label>
+              <input type="number" id="coupon-value" class="form-input" step="0.01" min="1" placeholder="20" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="coupon-min-spend">Minimum Spend ($)</label>
+              <input type="number" id="coupon-min-spend" class="form-input" step="0.01" min="0" placeholder="35.00" value="0">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="coupon-expiry">Expiry Date</label>
+              <input type="date" id="coupon-expiry" class="form-input" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Create Coupon Code</button>
+          </form>
+        </div>
+
+        <!-- ACTIVE COUPONS ROSTER -->
+        <div style="background: white; border-radius: var(--radius-lg); border: 1px solid var(--border); padding: 1.5rem;">
+          <h3>Active & Promotional Coupons</h3>
+          <div id="admin-coupons-list" style="margin-top: 1rem;"></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ====================================================================
+       MODALS & DRAWERS
+       ==================================================================== -->
+
+  <!-- 1. ORDER FULFILLMENT MODAL -->
+  <div id="modal-fulfillment" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Order Fulfillment & Driver Assignment</h3>
+        <button id="btn-close-fulfillment" class="modal-close">&times;</button>
+      </div>
+      <form id="form-fulfillment">
+        <input type="hidden" id="fulfillment-order-id">
+        <div class="form-group">
+          <label class="form-label" for="fulfillment-driver">Assign Delivery Driver / Courier</label>
+          <input type="text" id="fulfillment-driver" class="form-input" placeholder="e.g. John (Courier #4)" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="fulfillment-notes">Internal Fulfillment Notes</label>
+          <textarea id="fulfillment-notes" class="form-textarea" rows="3" placeholder="e.g. Egg carton inspected, fresh batch picked..."></textarea>
+        </div>
+        <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+          <button type="button" id="btn-print-slip-modal" class="btn btn-secondary">
+            <i class="fas fa-print"></i> Thermal Slip
+          </button>
+          <button type="submit" class="btn btn-primary">Save Fulfillment</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 2. ADD / EDIT PRODUCT MODAL -->
+  <div id="modal-product-edit" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="product-modal-title">Add / Edit Grocery Product</h3>
+        <button id="btn-close-product-edit" class="modal-close">&times;</button>
+      </div>
+      <form id="form-product-edit">
+        <input type="hidden" id="edit-prod-id">
+        <div class="form-group">
+          <label class="form-label" for="edit-prod-title">Product Title</label>
+          <input type="text" id="edit-prod-title" class="form-input" required>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+          <div class="form-group">
+            <label class="form-label" for="edit-prod-price">Price ($)</label>
+            <input type="number" id="edit-prod-price" class="form-input" step="0.01" min="0" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="edit-prod-stock">Stock Qty</label>
+            <input type="number" id="edit-prod-stock" class="form-input" min="0" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="edit-prod-threshold">Low-Stock Alert Threshold</label>
+          <input type="number" id="edit-prod-threshold" class="form-input" min="1" value="5" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="edit-prod-image">Image URL</label>
+          <input type="url" id="edit-prod-image" class="form-input" required>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Save Product</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 3. CUSTOMER HISTORY DETAIL DRAWER -->
+  <div id="modal-customer-detail" class="modal-overlay">
+    <div class="modal-card" style="max-width: 650px;">
+      <div class="modal-header">
+        <h3 id="customer-detail-name">Customer Order History</h3>
+        <button id="btn-close-customer-detail" class="modal-close">&times;</button>
+      </div>
+      <div id="customer-detail-body"></div>
+    </div>
+  </div>
+
+  <!-- 4. THERMAL PACKING SLIP PRINT MODAL -->
+  <div id="printable-slip-modal" class="modal-overlay">
+    <div class="modal-card" style="max-width: 480px; font-family: monospace;">
+      <div class="no-print" style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
+        <button id="btn-trigger-print" class="btn btn-primary btn-sm"><i class="fas fa-print"></i> Print Receipt</button>
+        <button id="btn-close-slip" class="modal-close">&times;</button>
+      </div>
+      <div id="slip-print-content"></div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer style="background: #0f172a;" class="no-print">
+    <div class="container" style="text-align: center; font-size: 0.85rem; color: #94a3b8;">
+      Freshly Grocery Admin Operations Portal · Standalone Dual-Mode System
+    </div>
+  </footer>
+
+  <script type="module">
+    import { initAdminOperations } from './js/admin.js';
+
+    // Initialize Standalone Admin Portal Operations Controller
+    await initAdminOperations();
+  </script>
+</body>
+</html>
