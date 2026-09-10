@@ -79,6 +79,9 @@ export function parseApiError(error) {
   if (msg.includes('row-level security') || code === '42501' || code === 403) {
     return 'Access Denied: You do not have permission for this action.';
   }
+  if (msg.includes('Email not confirmed') || code === 'email_not_confirmed') {
+    return 'Email not confirmed yet. Please check your inbox or disable "Confirm Email" in Supabase Auth settings.';
+  }
   if (msg.includes('Failed to fetch') || msg.includes('NetworkError')) {
     return 'Supabase project unreachable or paused. Verify your Supabase URL in settings or switch to MOCK MODE.';
   }
