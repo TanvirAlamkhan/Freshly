@@ -132,7 +132,7 @@ export function renderProductsGrid(gridContainerId, products) {
           <div class="product-category" style="text-transform: uppercase; font-size: 0.75rem; color: var(--primary); font-weight: 700;">${categoryName}</div>
           <h3 class="product-title">${p.title}</h3>
           <div class="product-bottom">
-            <span class="product-price">$${parseFloat(p.price).toFixed(2)}</span>
+            <span class="product-price">৳${parseFloat(p.price).toFixed(2)}</span>
             <button class="btn ${inStock ? 'btn-primary' : 'btn-secondary'} btn-sm btn-add-cart" data-id="${p.id}" ${!inStock ? 'disabled' : ''}>
               ${inStock ? '<i class="fas fa-plus"></i> Add' : 'Out of Stock'}
             </button>

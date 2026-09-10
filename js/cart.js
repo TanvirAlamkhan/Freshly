@@ -159,15 +159,15 @@ export function renderCartDrawer() {
     drawerFooter.innerHTML = `
       <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.95rem;">
         <span>Subtotal:</span>
-        <strong>$${summary.subtotal}</strong>
+        <strong>৳${summary.subtotal}</strong>
       </div>
       <div style="display: flex; justify-content: space-between; margin-bottom: 1rem; font-size: 0.95rem;">
         <span>Delivery Fee:</span>
-        <strong>${parseFloat(summary.deliveryFee) === 0 ? '<span style="color: var(--primary);">FREE</span>' : '$' + summary.deliveryFee}</strong>
+        <strong>${parseFloat(summary.deliveryFee) === 0 ? '<span style="color: var(--primary);">FREE</span>' : '৳' + summary.deliveryFee}</strong>
       </div>
       <div style="display: flex; justify-content: space-between; margin-bottom: 1.5rem; font-size: 1.15rem; font-weight: 700;">
         <span>Total:</span>
-        <span style="color: var(--primary-dark);">$${summary.grandTotal}</span>
+        <span style="color: var(--primary-dark);">৳${summary.grandTotal}</span>
       </div>
       <button id="btn-proceed-checkout" class="btn btn-primary" style="width: 100%;">
         Proceed to Checkout <i class="fas fa-arrow-right"></i>

@@ -93,7 +93,7 @@ async function renderKanbanBoard() {
             <div class="kanban-card" draggable="true" data-id="${order.id}">
               <div style="display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: 700; margin-bottom: 0.35rem;">
                 <span>#${String(order.id).substring(0, 8).toUpperCase()}</span>
-                <span style="color: var(--text-muted); font-weight: 500;">$${parseFloat(order.total_amount).toFixed(2)}</span>
+                <span style="color: var(--text-muted); font-weight: 500;">৳${parseFloat(order.total_amount).toFixed(2)}</span>
               </div>
               <div style="font-weight: 600; font-size: 0.875rem; margin-bottom: 0.25rem;">${order.customer_name || 'Customer'}</div>
               <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.5rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
@@ -263,7 +263,7 @@ async function renderInventoryTable() {
           </div>
         </td>
         <td>${p.category || 'General'}</td>
-        <td><strong>$${parseFloat(p.price).toFixed(2)}</strong></td>
+        <td><strong>৳${parseFloat(p.price).toFixed(2)}</strong></td>
         <td><strong style="color: ${isLowStock ? '#dc2626' : 'var(--text-main)'}">${p.stock_quantity} units</strong></td>
         <td>${p.low_stock_threshold || 5} units</td>
         <td>
@@ -623,6 +623,34 @@ function bindGlobalEvents() {
   });
 
   // Kanban vs Table View Toggle
+  // Image Preview Handler for File Input
+  document.getElementById('product-image')?.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    const previewContainer = document.getElementById('image-preview-container');
+    const previewThumb = document.getElementById('image-preview-thumb');
+    if (file && previewContainer && previewThumb) {
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        previewThumb.src = evt.target.result;
+        previewContainer.style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+
+  // Image Preview Handler for URL Input
+  document.getElementById('edit-prod-image')?.addEventListener('input', (e) => {
+    const url = e.target.value.trim();
+    const previewContainer = document.getElementById('image-preview-container');
+    const previewThumb = document.getElementById('image-preview-thumb');
+    if (url && previewContainer && previewThumb) {
+      previewThumb.src = url;
+      previewContainer.style.display = 'block';
+    } else if (!url && previewContainer && !document.getElementById('product-image')?.files[0]) {
+      previewContainer.style.display = 'none';
+    }
+  });
+
   const btnKanban = document.getElementById('btn-view-kanban');
   const btnTable = document.getElementById('btn-view-table');
   const viewKanban = document.getElementById('view-kanban-board');

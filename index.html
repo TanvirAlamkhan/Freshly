@@ -303,9 +303,9 @@
         const summary = getCartSummary();
         if (summary.items.length === 0) return;
 
-        document.getElementById('checkout-summary-subtotal').textContent = `$${summary.subtotal}`;
-        document.getElementById('checkout-summary-delivery').textContent = parseFloat(summary.deliveryFee) === 0 ? 'FREE' : `$${summary.deliveryFee}`;
-        document.getElementById('checkout-summary-total').textContent = `$${summary.grandTotal}`;
+        document.getElementById('checkout-summary-subtotal').textContent = `৳${summary.subtotal}`;
+        document.getElementById('checkout-summary-delivery').textContent = parseFloat(summary.deliveryFee) === 0 ? 'FREE' : `৳${summary.deliveryFee}`;
+        document.getElementById('checkout-summary-total').textContent = `৳${summary.grandTotal}`;
 
         // Auto-fill delivery address from profile
         const addrInput = document.getElementById('checkout-address-input');
