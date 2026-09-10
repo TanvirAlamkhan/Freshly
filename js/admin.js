@@ -709,12 +709,25 @@ function bindGlobalEvents() {
       if (file) {
         if (statusContainer && statusText) {
           statusContainer.style.display = 'block';
-          statusText.textContent = 'Uploading image to Supabase Storage...';
+          statusText.textContent = 'Processing product image...';
         }
-        const { uploadProductImage } = await import('./api.js');
-        const uploadResult = await uploadProductImage(file);
-        image_url = uploadResult.publicUrl;
-        uploadedFilePath = uploadResult.filePath;
+        
+        const { IS_MOCK_MODE } = await import('./admin-api.js');
+        if (IS_MOCK_MODE) {
+          // Read local image as Data URL for offline storefront display
+          image_url = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target.result);
+            reader.onerror = (e) => reject(new Error('Failed to read image file.'));
+            reader.readAsDataURL(file);
+          });
+        } else {
+          // Upload to Supabase Storage
+          const { uploadProductImage } = await import('./api.js');
+          const uploadResult = await uploadProductImage(file);
+          image_url = uploadResult.publicUrl;
+          uploadedFilePath = uploadResult.filePath;
+        }
       }
 
       if (!image_url) {
