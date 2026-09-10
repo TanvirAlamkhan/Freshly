@@ -136,15 +136,16 @@ export async function loginAdmin(email, password) {
   }
 
   if (IS_MOCK_MODE) {
-    if (email.toLowerCase() === 'admin@grocery.com' && password === 'admin123') {
+    const e = email.toLowerCase();
+    if ((e === 'admin@grocery.com' && password === 'admin123') || (e === 'admin@fresh.com' && password === 'Admin123')) {
       const session = {
-        user: { id: 'mock-admin-id', email: 'admin@grocery.com' },
+        user: { id: 'mock-admin-id', email: e },
         profile: { full_name: 'Store Admin', role: 'admin' }
       };
       sessionStorage.setItem('freshly_admin_session', JSON.stringify(session));
       return session;
     } else {
-      throw new Error('Invalid credentials in Mock Mode. Use admin@grocery.com / admin123');
+      throw new Error('Invalid credentials. Use admin@fresh.com / Admin123 (or admin@grocery.com / admin123)');
     }
   } else {
     const client = getSupabase();

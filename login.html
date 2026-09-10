@@ -69,7 +69,12 @@
       <a href="index.html" class="nav-brand" style="justify-content: center; margin-bottom: 0.5rem;">
         <i class="fas fa-leaf"></i> Freshly
       </a>
-      <p style="font-size: 0.9rem; color: var(--text-muted);">Access your Grocery Portal</p>
+      <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.75rem;">Access your Grocery Portal</p>
+      
+      <!-- QUICK MODE TOGGLE BADGE -->
+      <button id="btn-login-toggle-mode" class="badge" style="background: #f1f5f9; color: #0284c7; font-size: 0.8rem; cursor: pointer; border: 1px solid #cbd5e1; padding: 0.35rem 0.75rem; width: 100%;">
+        <i class="fas fa-toggle-on"></i> Mode: <span id="login-mode-label">MOCK MODE (OFFLINE)</span> — Click to Switch
+      </button>
     </div>
 
     <!-- ROUTE GUARD BANNER CONTAINER -->
@@ -176,9 +181,31 @@
     import { loginUser, registerUser, getSupabaseConfig, setSupabaseConfig, parseApiError } from './js/api.js';
     import { redirectIfLoggedIn } from './js/auth.js';
     import { showToast } from './js/customer.js';
+    import { IS_MOCK_MODE, setMockMode, loginAdmin } from './js/admin-api.js';
 
     // 1. Check if already logged in
     await redirectIfLoggedIn();
+
+    // Mode Toggle Badge Setup
+    const modeBtn = document.getElementById('btn-login-toggle-mode');
+    const modeLabel = document.getElementById('login-mode-label');
+
+    function updateLoginModeBadge() {
+      if (modeLabel && modeBtn) {
+        modeLabel.textContent = IS_MOCK_MODE ? 'MOCK MODE (OFFLINE)' : 'SUPABASE MODE (LIVE)';
+        modeBtn.style.background = IS_MOCK_MODE ? '#f0f9ff' : '#ecfdf5';
+        modeBtn.style.color = IS_MOCK_MODE ? '#0284c7' : '#047857';
+        modeBtn.style.borderColor = IS_MOCK_MODE ? '#bae6fd' : '#a7f3d0';
+      }
+    }
+
+    updateLoginModeBadge();
+
+    modeBtn?.addEventListener('click', () => {
+      setMockMode(!IS_MOCK_MODE);
+      updateLoginModeBadge();
+      showToast(`Switched mode to ${IS_MOCK_MODE ? 'MOCK MODE (OFFLINE)' : 'SUPABASE MODE (LIVE)'}`, 'info');
+    });
 
     // 2. Parse URL parameters for route guard banners
     const urlParams = new URLSearchParams(window.location.search);
@@ -213,7 +240,7 @@
       formLogin.style.display = 'none';
     });
 
-    // 4. Submit Handlers
+    // 4. Sign In Form Submit
     formLogin.addEventListener('submit', async (e) => {
       e.preventDefault();
       const email = document.getElementById('login-email').value.trim();
@@ -223,8 +250,17 @@
       try {
         btn.disabled = true;
         btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Authenticating...`;
+
+        // Check if admin login
+        if (email.toLowerCase().includes('admin')) {
+          await loginAdmin(email, password);
+          showToast('Admin authenticated successfully! Redirecting...', 'success');
+          setTimeout(() => { window.location.href = 'admin.html'; }, 600);
+          return;
+        }
+
         await loginUser(email, password);
-        showToast('Login successful! Redirecting...', 'success');
+        showToast('Signed in successfully!', 'success');
         setTimeout(() => redirectIfLoggedIn(), 600);
       } catch (err) {
         showToast(err.message, 'error');
