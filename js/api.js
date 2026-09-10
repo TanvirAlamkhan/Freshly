@@ -80,10 +80,10 @@ export function parseApiError(error) {
     return 'Access Denied: You do not have permission for this action.';
   }
   if (msg.includes('Failed to fetch') || msg.includes('NetworkError')) {
-    return 'Network connection unstable. Please check your internet connection.';
+    return 'Supabase project unreachable or paused. Verify your Supabase URL in settings or switch to MOCK MODE.';
   }
 
-  return msg || 'Database operation failed.';
+  return msg || error.error || 'Database operation failed.';
 }
 
 /* ============================================================================
