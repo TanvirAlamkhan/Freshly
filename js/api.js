@@ -524,10 +524,30 @@ export async function createOrder(orderPayload) {
       throw new Error(`Stock Error:\n${stockCheck.issues.join('\n')}`);
     }
 
-    const { data, error } = await client
+    let insertPayload = { ...orderPayload };
+    let { data, error } = await client
       .from('orders')
-      .insert([orderPayload])
+      .insert([insertPayload])
       .select();
+
+    // Fallback if Supabase database orders table has not applied schema migration for coupon columns
+    if (error && (error.message?.includes('coupon_code') || error.message?.includes('discount_amount') || error.message?.includes('schema cache'))) {
+      console.warn('[Supabase Order Fallback] Missing coupon columns in Supabase orders schema. Stripping coupon fields and re-attempting...');
+      const couponNote = insertPayload.coupon_code ? `[Applied Coupon: ${insertPayload.coupon_code} (-৳${insertPayload.discount_amount})]` : '';
+      const notes = [insertPayload.fulfillment_notes, couponNote].filter(Boolean).join(' ');
+
+      delete insertPayload.coupon_code;
+      delete insertPayload.discount_amount;
+      insertPayload.fulfillment_notes = notes;
+
+      const retryRes = await client
+        .from('orders')
+        .insert([insertPayload])
+        .select();
+
+      data = retryRes.data;
+      error = retryRes.error;
+    }
 
     if (error) throw new Error(parseApiError(error));
     const newOrder = data[0];
